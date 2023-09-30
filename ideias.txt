@@ -10,32 +10,31 @@ Amigos do Bem:
 - 10600 voluntários.
 - Buscam resolver o problema na raíz.
 
-
 Tópicos comentados importantes:
 - Saúde (Doença de chagas).
 - Distribuição de água (desenvolvimento socioeconômico).
 - Educação (Mudança que impacta muito na região do Sertão) (Fábrica de castanha que alavanca recursos para educação).
 - Criar Hipoteses.
 - Insights sobre o que eles deveriam atacar.
-
+- Municípios com menor IDH foram selecionados.
+- Só se constrói cidades do bem em locais com mão e obra e o dinheiro é aproximadamente 2M (físico).
+- Machismo atrelado a pessoa mais velhas e que é abordada como mudança em crianças dentro da educação promovida.
+- Jovens que são inspirados a empreender.
+- Distância de centros urbanos é grande.
+- Baixa infraestrutura.
+- Complementar o que já é feito, ou trazer produtos novos para serem desenvolvidos. (Ex Do cajú só é utlizado a castanha).
 
 Comentário iteressantes e chocantes:
-- Alcione (Rosto e influente dentro do Amigos do Bem)
+- Alcione (Rosto e influente dentro do Amigos do Bem).
 - Pessoas chegaram a nunca receber salários até a atuação da Instituição.
-
-
-Lançamento do desafio:
-- DistÂncia de centros urbanos
-- Baixa infraestrutura
 
 Perguntas: (ONDE E O QUE)
 - Qual o proximo municipio de atuação do Amigos do bem?
 - Qual a atividade econômica (caju? sacolas?)?
     - Qual municipio e prioritario (carente)?
     - Qual o impacto que o amigos do bem pode ter neste municipio?
-    - Qual o panorâma do munício hoje em digital?    
-    - O que faz sentido implmentar dentro do ambito econômico 
-
+    - Qual o panorâma do munício hoje em digital?
+    - O que faz sentido implmentar dentro do ambito econômico?
 
 Base de dados:
 - 8 Bases.
@@ -44,19 +43,11 @@ Base de dados:
     - Tipo de produto e hectares irrigados.
     - COMEX, Exportação.
 
-
-Avaliações:
-- Análise:
-    - Clareza
-    - Robustez
-    - Qualidade
-
-- Recomendações:
-    - Clareza
-    - 
-    -
-    
-- Criatividade:
-    -
-    -
-    -
+Explicação da solução de uma das ganhadoras do passado:
+    - Focado em segurança pública
+    - CLUSTERIZAÇÃO, PREDIÇÃO e RECOMENDAÇÃO.
+    - CLusterização com variáveis com diferentes escopos.
+    - Avaliar o cluster de mais impacto.
+    - Explorou as características que tinham mais importantes para o aumento da tax de homicídio.
+    - Não perder muito tempo nas Perguntas dado que não somos expert.
+    - Iterar sobre as hipóteses.
