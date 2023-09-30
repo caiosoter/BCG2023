@@ -23,6 +23,9 @@ Tópicos comentados importantes:
 - Distância de centros urbanos é grande.
 - Baixa infraestrutura.
 - Complementar o que já é feito, ou trazer produtos novos para serem desenvolvidos. (Ex Do cajú só é utlizado a castanha).
+- Gerar emprego, "Não é sobre entregar o peixe, mas sim, sobre ensinar a pescar" (Importante).
+- Logística talvez seja um problema que pode ser evitado arrumando uma forma de autossustentabilidade?!
+- Desisteresse das pessoas dos povoados de progresso dado o ambiente ao redor. (Autoestima? Hiper realismo?)!! Como fazer para instigar ?
 
 Comentário iteressantes e chocantes:
 - Alcione (Rosto e influente dentro do Amigos do Bem).
@@ -44,10 +47,12 @@ Base de dados:
     - COMEX, Exportação.
 
 Explicação da solução de uma das ganhadoras do passado:
-    - Focado em segurança pública
+    - Focado em segurança pública.
     - CLUSTERIZAÇÃO, PREDIÇÃO e RECOMENDAÇÃO.
     - CLusterização com variáveis com diferentes escopos.
     - Avaliar o cluster de mais impacto.
     - Explorou as características que tinham mais importantes para o aumento da tax de homicídio.
     - Não perder muito tempo nas Perguntas dado que não somos expert.
     - Iterar sobre as hipóteses.
+
+
