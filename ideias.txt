@@ -15,6 +15,8 @@ Tópicos comentados importantes:
 - Saúde (Doença de chagas).
 - Distribuição de água (desenvolvimento socioeconômico).
 - Educação (Mudança que impacta muito na região do Sertão) (Fábrica de castanha que alavanca recursos para educação).
+- Criar Hipoteses.
+- Insights sobre o que eles deveriam atacar.
 
 
 Comentário iteressantes e chocantes:
@@ -35,4 +37,26 @@ Perguntas: (ONDE E O QUE)
     - O que faz sentido implmentar dentro do ambito econômico 
 
 
+Base de dados:
+- 8 Bases.
+    - Qualidade de água.
+    - Censo.
+    - Tipo de produto e hectares irrigados.
+    - COMEX, Exportação.
 
+
+Avaliações:
+- Análise:
+    - Clareza
+    - Robustez
+    - Qualidade
+
+- Recomendações:
+    - Clareza
+    - 
+    -
+    
+- Criatividade:
+    -
+    -
+    -
