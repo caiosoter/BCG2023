@@ -10,7 +10,7 @@ Amigos do Bem:
 - 10600 voluntários.
 - Buscam resolver o problema na raíz.
 
-Tópicos comentados importantes:
+Tópicos comentados ou importantes:
 - Saúde (Doença de chagas).
 - Distribuição de água (desenvolvimento socioeconômico).
 - Educação (Mudança que impacta muito na região do Sertão) (Fábrica de castanha que alavanca recursos para educação).
@@ -26,6 +26,8 @@ Tópicos comentados importantes:
 - Gerar emprego, "Não é sobre entregar o peixe, mas sim, sobre ensinar a pescar" (Importante).
 - Logística talvez seja um problema que pode ser evitado arrumando uma forma de autossustentabilidade?!
 - Desisteresse das pessoas dos povoados de progresso dado o ambiente ao redor. (Autoestima? Hiper realismo?)!! Como fazer para instigar ?
+- IDH 0,520 - média dos municípios onde ficam os povoados atendidos pelo Amigos do Bem
+- Estados atendidos, Alagoas, Pernambuco e Ceará.
 
 Comentário iteressantes e chocantes:
 - Alcione (Rosto e influente dentro do Amigos do Bem).
@@ -56,3 +58,6 @@ Explicação da solução de uma das ganhadoras do passado:
     - Iterar sobre as hipóteses.
 
 
+referências:
+- https://www.amigosdobem.org/porque-o-sertao/
+- https://www.amigosdobem.org/amigos-do-bem-idis/
