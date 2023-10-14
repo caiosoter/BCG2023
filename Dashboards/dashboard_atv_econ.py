@@ -10,6 +10,7 @@ import plotly.express as px
 import plotly.io as pio
 import geopandas as gpd
 import plotly.graph_objs as go
+import joblib as jb
 from millify import millify
 from shapely import wkt
 from shapely.geometry import shape
@@ -53,6 +54,11 @@ def carregar_dados_mapa():
     dados_mapa = gpd.GeoDataFrame(dados_mapa, geometry='geometry')
     dados_mapa = dados_mapa.set_crs("EPSG:4326")
     return dados_mapa
+
+@st.cache_data
+def carregar_dados_knn():
+    dados_knn = pd.read_csv(r"C:/Users/User/Documents/GitHub/BCG2023/Dados/Views/dataset_knn_processado.csv")
+    return dados_knn
 
 def carregar_mapa(_mun_name, _muns_prox_names, metrica, metrica_alias):
     all_muns = carregar_dados_mapa().to_crs("EPSG:4326")
@@ -187,6 +193,13 @@ def bar_plot(df, x, y, title, leg_x, leg_y, text):
     fig.update_layout(title=title)
     st.plotly_chart(fig, use_container_width=True)
 
+def muns_prox_knn(dados_knn, model_knn, mun_name, k):
+    mun_df = dados_knn[dados_knn['NOME'] == mun_name].drop(columns=['IBGE7', 'NOME','Unnamed: 0'])
+    _, neighbours = model_knn.kneighbors(mun_df, n_neighbors=k+1)
+    neighbours = neighbours[0][1:]
+    muns_prox = dados_knn['NOME'].iloc[neighbours].values
+    return muns_prox
+
 # Coleta dos dados
 all_muns = carregar_municipios_sertao().drop(columns='Unnamed: 0')
 agro = carregar_agro()
@@ -247,7 +260,7 @@ def mudar_raio():
     st.session_state.raio = raio
 
 def mudar_vizinhos():
-    st.session_state.vizinhos = vizinhos
+    st.session_state.vizinhos = k
 
 def mudar_nomes_municipios_comp():
     st.session_state.muns_comp_names = muns_comp_names
@@ -262,7 +275,7 @@ if "raio" not in st.session_state:
     st.session_state.raio = '50 Km'
 
 if "vizinhos" not in st.session_state:
-    st.session_state.vizinhos = '5'
+    st.session_state.vizinhos = 5
 
 if "muns_comp_names" not in st.session_state:
     muns_comp_names = [nome for nome in mun_names if nome != mun_name]
@@ -297,7 +310,15 @@ if tipo_comparacao == 'Vizinhos mais próximos':
         muns_prox_dict = muns_prox(mun_df, all_muns, raio)
         muns_prox_names = [nome for nome in list(muns_prox_dict.keys()) if nome != mun_df['NOME'].iloc[0]]
     else:
-        pass
+        k = st.selectbox(
+            'Número de vizinhos', 
+            [5, 7, 10], 
+            on_change = mudar_vizinhos
+            )
+        dados_knn = carregar_dados_knn()
+        model_knn = jb.load(r"C:/Users/User/Documents/GitHub/BCG2023/Dashboards/models/knn.pkl", mmap_mode="r")
+        muns_prox_names = muns_prox_knn(dados_knn, model_knn, mun_name, k)
+        
 else:
     muns_comp_names = [nome for nome in mun_names if nome != mun_name]
     mun_comparacao = st.selectbox('Municipio de comparação', muns_comp_names)
