@@ -42,6 +42,82 @@ def carregar_solos(_all_muns):
     solos['AREA_TOTAL'] = round(solos['AREA_TOTAL'],2)
     return solos
 
+@st.cache_data
+def carregar_dados_mapa():
+    dados_mapa = pd.read_csv(r"C:/Users/User/Documents/GitHub/BCG2023/Dados/Views/dados_mapa.csv")
+    lim_muns = pd.read_json(r'C:/Users/User/Documents/GitHub/BCG2023/Dados/Views/municipios-poligonos.json')
+    lim_muns['poligono'] = [str(polygon) for polygon in lim_muns['poligono']]
+    lim_muns['geometry'] = lim_muns['poligono'].apply(lambda x: shape(eval(x)))
+    lim_muns = lim_muns[['municipioCodigo', 'geometry']].rename(columns={'municipioCodigo':'IBGE7'})
+    dados_mapa = dados_mapa.merge(lim_muns, on = 'IBGE7', how = 'inner')
+    dados_mapa = gpd.GeoDataFrame(dados_mapa, geometry='geometry')
+    dados_mapa = dados_mapa.set_crs("EPSG:4326")
+    return dados_mapa
+
+def carregar_mapa(_mun_name, _muns_prox_names, metrica, metrica_alias):
+    all_muns = carregar_dados_mapa().to_crs("EPSG:4326")
+    centroids = all_muns[['NOME', 'geometry']].copy()
+    centroids.crs = 'epsg:32724'
+    colormap = branca.colormap.LinearColormap(
+        vmin=all_muns[metrica].quantile(0.0),
+        vmax=all_muns[metrica].quantile(1),
+        colors=[
+            "red",
+            "orange",
+            "yellow",
+            "green", 
+            "blue",
+            "purple"
+        ],
+        caption=metrica_alias)
+    m = folium.Map(
+        location=[
+            centroids[centroids['NOME']==_mun_name].centroid.values[0].y, 
+            centroids[centroids['NOME']==_mun_name].centroid.values[0].x
+        ], 
+        zoom_start=8.5
+    )
+    tooltip = folium.GeoJsonTooltip(
+        fields=["IBGE7", "NOME", metrica],
+        aliases=["Código do IBGE:", "Nome:", f"{metrica_alias}:"],
+        localize=True,
+        sticky=False,
+        labels=True,
+        style="""
+            background-color: #F0EFEF;
+        """,
+        max_width=800,
+    )
+    g = folium.GeoJson(
+        all_muns,
+        style_function=lambda x: {
+            "fillColor": colormap(x["properties"][metrica])
+            if x["properties"][metrica] is not None
+            else "transparent",
+            "color": "black",
+            "fillOpacity": 0.4,
+        },
+        tooltip=tooltip,
+    ).add_to(m)
+    folium.Marker(
+            location=[
+                centroids[centroids['NOME']==_mun_name].centroid.values[0].y, 
+                centroids[centroids['NOME']==_mun_name].centroid.values[0].x
+            ],
+            icon = folium.Icon(color = 'red')
+        ).add_to(m)
+    for nome in _muns_prox_names:    
+        folium.Marker(
+            location=[
+                centroids[centroids['NOME']==nome].centroid.values[0].y, 
+                centroids[centroids['NOME']==nome].centroid.values[0].x
+            ],
+            icon = folium.Icon(color = 'blue')
+        ).add_to(m)
+    colormap.add_to(m)
+    folium.LayerControl().add_to(m)
+    folium_static(m, width = 1200)
+
 def muns_prox(_mun_df, _all_muns, _raio):
     coordenadas_mun = (_mun_df['LATITUDE'].iloc[0], _mun_df['LONGITUDE'].iloc[0])
     muns_prox = {}
@@ -56,7 +132,7 @@ def comp_df(_metric, _mun_df, _all_muns, _muns_prox_names):
     mun_metric = _mun_df[_metric].iloc[0]
     muns_prox_df = _all_muns[_metric].loc[_all_muns['NOME'].isin(_muns_prox_names)].mean()
     comp_df = pd.DataFrame()
-    comp_df.insert(0, 'NOME', ['Município Potencial', 'Média do Entorno'])
+    comp_df.insert(0, 'NOME', ['Município Potencial', 'Média do(s) Vizinho(s)'])
     comp_df.insert(1, _metric, [round(mun_metric,1), round(muns_prox_df,1)])
     return comp_df
 
@@ -102,7 +178,7 @@ def bar_plot(df, x, y, title, leg_x, leg_y, text):
         orientation='h', 
         text = text,
         color='NOME',
-        category_orders={'NOME': ['Município Potencial', 'Média do Entorno']}
+        category_orders={'NOME': ['Município Potencial', 'Média do(s) Vizinho(s)']}
         )
     fig.data[0].update(showlegend=False)
     fig.data[1].update(showlegend=False)
@@ -207,7 +283,7 @@ if tipo_comparacao == 'Vizinhos mais próximos':
     proximidade = st.selectbox(
         'Critério de proximidade', [
             'Distância geográfica', 
-            'Características ambientais'
+            'Características ambientais comuns'
             ],
         on_change = mudar_proximidade)
 
@@ -230,129 +306,125 @@ else:
 
 st.subheader("Mapa")
 
-def mudar_tipo_de_metrica():
-    st.session_state.tipo_metrica = tipo_metrica
+with st.container():
 
-def mudar_metrica():
-    st.session_state.metrica = metrica
+    def mudar_tipo_de_metrica():
+        st.session_state.tipo_metrica = tipo_metrica
 
-if "tipo_metrica" not in st.session_state:
-    st.session_state.tipo_metrica = 'Recursos hídricos'
+    def mudar_metrica():
+        st.session_state.metrica = metrica
 
-if "metrica" not in st.session_state:
-    st.session_state.metrica = 'Precipitação média anual'
+    if "tipo_metrica" not in st.session_state:
+        st.session_state.tipo_metrica = 'Dados Meteorológicos e Recursos Hídricos'
 
-tipo_metrica = st.selectbox(
-    'Tipo de métrica', [
-        'Recursos hídricos', 
-        'Produtos Agrícolas - Valor Comercializado', 
-        'Tipos de solo - Área Total'
-        ], 
-        on_change = mudar_tipo_de_metrica
-        )
+    if "metrica" not in st.session_state:
+        st.session_state.metrica = 'Precipitação média anual (mm)'
 
-if tipo_metrica == 'Recursos hídricos':
+    tipo_metrica = st.selectbox(
+        'Tipo de métrica', [
+            'Dados Meteorológicos e Recursos Hídricos',
+            'Produtos Agrícolas - Valor Comercializado', 
+            'Tipos de Solo - Área Total'
+            ], 
+            on_change = mudar_tipo_de_metrica
+            )
 
-    aliases = {
-        "Distância para o corpo d'água mais próximo (Km)":'DIST_CORPO_AGUA',
-        "Precipitação média anual (mm)":'PREC_MED',
-        "Temperatura média diária":'TEMP_MED',
-    }
+    if tipo_metrica == 'Dados Meteorológicos e Recursos Hídricos':
 
-    metrica = st.selectbox(
-        'Métrica', [
-            "Distância para o corpo d'água mais próximo (Km)", 
-            "Precipitação média anual (mm)"
-            ],
+        aliases = {
+            "Precipitação média anual (mm)":'PREC_MED',
+            "Radiação média global (Kj/m²)":'RED_MED',
+            "Temperatura média diária":'TEMP_MED',
+            "Qualidade média da água":"QUAL_MED_AGUA",
+            "Área Irrigada Total e Potencial Efetiva (ha)":"AREA_IRRIGADA_TOT_POT_E"
+            }
+
+        metrica_alias = st.selectbox(
+            'Métrica',
+            list(aliases.keys()),
             on_change = mudar_metrica
             )
-    metrica_alias = metrica
-    metrica =  aliases[metrica_alias]
-    
-elif tipo_metrica == 'Produtos Agrícolas - Valor Comercializado':
-    metrica = st.selectbox(
-        'Produto Agrícola', 
-        agro['PRODUTO'].unique(),
-        on_change = mudar_metrica
-        )
-else:
-    metrica = st.selectbox(
-        'Tipo de Solo - Área Total', 
-        solos['SOLO'].unique(),
-        on_change = mudar_metrica
-        )
+        metrica =  aliases[metrica_alias]
+        
+    elif tipo_metrica == 'Produtos Agrícolas - Valor Comercializado':
 
-metrica_alias = "Distância para o corpo d'água mais próximo (Km)"
-metrica = 'DIST_CORPO_AGUA'
+        produtos = [
+            'ALGODAO HERBACEO (EM CAROCO)',
+            'AMENDOIM (EM CASCA)', 'BANANA ', 
+            'BATATA-DOCE', 
+            'BATATA-INGLESA',
+            'CACAU (EM AMENDOA)', 
+            'CAFE (EM GRAO) ARABICA',
+            'CAFE (EM GRAO) CANEPHORA', 
+            'CAFE (EM GRAO) TOTAL', 
+            'CASTANHA DE CAJU',
+            'FAVA (EM GRAO)', 
+            'FEIJAO (EM GRAO)', 
+            'GUARANA ', 
+            'MAMONA ', 
+            'MANDIOCA',
+            'MANGA', 
+            'MELANCIA', 
+            'MELAO', 
+            'MILHO (EM GRAO)', 
+            'PIMENTA-DO-REINO',
+            'SOJA (EM GRAO)', 
+            'SORGO (EM GRAO)', 
+            'TOMATE', 
+            'TRIGO (EM GRAO)',
+            'URUCUM ', 
+            'UVA'
+            ]
 
-centroids = all_muns[['NOME', 'geometry']].copy()
-centroids.crs = 'epsg:32724'
+        metrica = st.selectbox(
+            'Produto Agrícola', 
+            produtos,
+            on_change = mudar_metrica
+            )
+        metrica_alias = f"{metrica} - Valor Comercializado (R$)"
+    else:
 
-colormap = branca.colormap.LinearColormap(
-    vmin=all_muns[metrica].quantile(0.0),
-    vmax=all_muns[metrica].quantile(1),
-    colors=[
-        "red",
-        "orange",
-        "yellow",
-        "green", 
-        "blue",
-        "purple"
-    ],
-    caption=metrica_alias)
-    
-m = folium.Map(
-    location=[
-        centroids[centroids['NOME']==mun_name].centroid.values[0].y, 
-        centroids[centroids['NOME']==mun_name].centroid.values[0].x
-    ], 
-    zoom_start=8.5
-)
+        tipos_solo = [
+            'CXbd - Cambissolos Haplicos Tb Distroficos',
+            'CXbe - Cambissolos Haplicos Tb Eutroficos',
+            'CXve - Cambissolos Haplicos Ta Eutroficos',
+            'FFc - Plintossolos Petricos Concrecionarios',
+            'FXd - Plintossolos Haplicos Distroficos',
+            'GXbd - Gleissolos Haplicos Tb Distroficos',
+            'GZn - Gleissolos Salicos Sodicos',
+            'LAd - Latossolos Amarelos Distroficos',
+            'LVAd - Latossolos Vermelho-Amarelos Distroficos',
+            'LVAdf - Latossolos Vermelho-Amarelos Distroferricos',
+            'LVAe - Latossolos Vermelho-Amarelos Eutroficos',
+            'LVd - Latossolos Vermelhos Distroficos',
+            'LVe - Latossolos Vermelhos Eutroficos',
+            'MDo - Chernossolos Rendzicos Orticos',
+            'MTo - Chernossolos Argiluvicos Orticos',
+            'PVAd - Argissolos Vermelho-Amarelos Distroficos',
+            'PVAe - Argissolos Vermelho-Amarelos Eutroficos',
+            'PVd - Argissolos Vermelhos Distroficos',
+            'PVe - Argissolos Vermelhos Eutroficos',
+            'RLd - Neossolos Litolicos Distroficos',
+            'RLe - Neossolos Litolicos Eutroficos',
+            'RQo - Neossolos Quartzarenicos Orticos',
+            'RRe - Neossolos Regoliticos Eutroficos',
+            'RYve - Neossolos Fluvicos Ta Eutroficos',
+            'SNo - Planossolos Natricos Orticos',
+            'SXe - Planossolos Haplicos Eutroficos',
+            'TCo - Luvissolos Cromicos Orticos',
+            'TCp - Luvissolos Cromicos Palicos',
+            'VEo - Vertissolos Ebanicos Orticos',
+            'VXo - Vertissolos Haplicos Orticos'
+            ]
 
-tooltip = folium.GeoJsonTooltip(
-    fields=["IBGE7", "NOME", metrica],
-    aliases=["Código do IBGE:", "Nome:", f"{metrica_alias}:"],
-    localize=True,
-    sticky=False,
-    labels=True,
-    style="""
-        background-color: #F0EFEF;
-    """,
-    max_width=800,
-)
+        metrica = st.selectbox(
+            'Tipo de Solo - Área Total', 
+            tipos_solo,
+            on_change = mudar_metrica
+            )
+        metrica_alias = f"{metrica} - Área Total (ha)"
 
-g = folium.GeoJson(
-    all_muns,
-    style_function=lambda x: {
-        "fillColor": colormap(x["properties"][metrica])
-        if x["properties"][metrica] is not None
-        else "transparent",
-        "color": "black",
-        "fillOpacity": 0.4,
-    },
-    tooltip=tooltip,
-).add_to(m)
-
-folium.Marker(
-        location=[
-            centroids[centroids['NOME']==mun_name].centroid.values[0].y, 
-            centroids[centroids['NOME']==mun_name].centroid.values[0].x
-        ],
-        icon = folium.Icon(color = 'red')
-    ).add_to(m)
-
-for nome in list(muns_prox_names):    
-    folium.Marker(
-        location=[
-            centroids[centroids['NOME']==nome].centroid.values[0].y, 
-            centroids[centroids['NOME']==nome].centroid.values[0].x
-        ],
-        icon = folium.Icon(color = 'blue')
-    ).add_to(m)
-
-colormap.add_to(m)
-
-folium_static(m, width = 1200)
+    carregar_mapa(mun_name, muns_prox_names, metrica, metrica_alias)
 
 # Recursos hídricos
 st.subheader("Dados meteorológicos")
@@ -403,7 +475,7 @@ with col2:
 # Atividades agrícolas
 st.subheader("Atividades agrícolas")   
 agro_mun, agro_prox = agro_comp(agro, mun_name, 'VALOR_PROD', muns_prox_names)
-fig = make_subplots(rows=1, cols=2, subplot_titles=('Município potencial', 'Total do entorno'))
+fig = make_subplots(rows=1, cols=2, subplot_titles=('Município Potencial', 'Total do(s) Vizinho(s)'))
 trace1 = px.bar(
     agro_mun,
     x='VALOR_PROD',
@@ -429,7 +501,7 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 agro_mun, agro_prox = agro_comp(agro, mun_name, 'AREA_PLANTADA', muns_prox_names)
-fig = make_subplots(rows=1, cols=2, subplot_titles=('Município potencial', 'Total do entorno'))
+fig = make_subplots(rows=1, cols=2, subplot_titles=('Município Potencial', 'Total do(s) vizinho(s)'))
 trace1 = px.bar(
     agro_mun,
     x='AREA_PLANTADA',
@@ -455,7 +527,7 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 agro_mun, agro_prox = agro_comp(agro, mun_name, 'REND_AREA', muns_prox_names)
-fig = make_subplots(rows=1, cols=2, subplot_titles=('Município potencial', 'Média do entorno'))
+fig = make_subplots(rows=1, cols=2, subplot_titles=('Município Potencial', 'Média do(s) vizinho(s)'))
 trace1 = px.bar(
     agro_mun,
     x='REND_AREA',
@@ -489,7 +561,7 @@ solos_prox = solos_prox[['SOLO', 'AREA_TOTAL']].groupby('SOLO').sum().reset_inde
 fig = make_subplots(
     rows=1, 
     cols=2, 
-    subplot_titles=('Município potencial', 'Total do entorno'),
+    subplot_titles=('Município potencial', 'Total do(s) vizinho(s)'),
     horizontal_spacing = 0.3
     )
 trace1 = px.bar(
