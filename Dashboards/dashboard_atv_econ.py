@@ -216,7 +216,7 @@ mun_df = all_muns[all_muns['NOME']== mun_name]
 col1, col2, col3 = st.columns(3)
 with col1:
     uf = mun_df['UF'].iloc[0]
-    capital_prox = mun_df['CAPITAL_PROXIMA'].iloc[0]
+    capital_prox = mun_df['CAPITAL_PROX'].iloc[0]
     st.metric('Estado', f"{uf}")
     st.metric('Capital mais próxima', f"{capital_prox}")
 with col2:
@@ -343,20 +343,34 @@ with st.container():
 
     tipo_metrica = st.selectbox(
         'Tipo de métrica', [
-            'Dados Meteorológicos e Recursos Hídricos',
+            'Dados Meteorológicos',
+            'Recursos Hídricos',
             'Produtos Agrícolas - Valor Comercializado', 
             'Tipos de Solo - Área Total'
             ], 
             on_change = mudar_tipo_de_metrica
             )
 
-    if tipo_metrica == 'Dados Meteorológicos e Recursos Hídricos':
+    if tipo_metrica == 'Dados Meteorológicos':
 
         aliases = {
             "Precipitação média anual (mm)":'PREC_MED',
-            "Radiação média global (Kj/m²)":'RED_MED',
-            "Temperatura média diária":'TEMP_MED',
+            "Radiação média global (Kj/m²)":'RAD_MED',
+            "Temperatura média diária (°C)":'TEMP_MED'
+            }
+
+        metrica_alias = st.selectbox(
+            'Métrica',
+            list(aliases.keys()),
+            on_change = mudar_metrica
+            )
+        metrica =  aliases[metrica_alias]
+
+    elif tipo_metrica == 'Recursos hídricos':
+
+        aliases = {
             "Qualidade média da água":"QUAL_MED_AGUA",
+            "Percentual de água no solo": "AGUA_SOLO",
             "Área Irrigada Total e Potencial Efetiva (ha)":"AREA_IRRIGADA_TOT_POT_E"
             }
 
@@ -460,20 +474,39 @@ with col1:
         leg_y = None ,
         text = 'PREC_MED'
         )
-with col2:
     bar_plot(
-        df = comp_df('RED_MED', mun_df, all_muns, muns_prox_names), 
-        x = 'RED_MED', 
+        df = comp_df('RAD_MED', mun_df, all_muns, muns_prox_names), 
+        x = 'RAD_MED', 
         y = 'NOME', 
         title = 'Radiação média global', 
         leg_x = 'Radiação média global (Kj/m²)',
         leg_y = None ,
-        text = 'RED_MED'
+        text = 'RAD_MED'
         )
+with col2:
+    bar_plot(
+        df = comp_df('TEMP_MED', mun_df, all_muns, muns_prox_names), 
+        x = 'TEMP_MED', 
+        y = 'NOME', 
+        title = 'Temperatura média diária', 
+        leg_x = "Temperatura média diária (°C)",
+        leg_y = None ,
+        text = 'TEMP_MED'
+        )
+    
 
 st.subheader("Recursos hídricos")
 col1, col2 = st.columns(2)
 with col1:
+    bar_plot(
+        df = comp_df('AGUA_SOLO', mun_df, all_muns, muns_prox_names), 
+        x = 'AGUA_SOLO', 
+        y = 'NOME', 
+        title = 'Percentual de água do solo', 
+        leg_x = 'Percentual de água do solo',
+        leg_y = None ,
+        text = 'AGUA_SOLO'
+        )
     bar_plot(
         df = comp_df('AREA_IRRIGADA_TOT_POT_E', mun_df, all_muns, muns_prox_names), 
         x = 'AREA_IRRIGADA_TOT_POT_E', 
