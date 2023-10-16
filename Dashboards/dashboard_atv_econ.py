@@ -143,6 +143,10 @@ def comp_df(_metric, _mun_df, _all_muns, _muns_prox_names):
     return comp_df
 
 def agro_comp(agro, mun_name, metric, muns_prox_names):
+
+    agro['REND_AREA'] = agro['VALOR_PROD']/agro['AREA_PLANTADA']
+    agro_mun = agro[agro['NOME']==mun_name]
+
     if metric in ['VALOR_PROD', 'AREA_PLANTADA']:
         agro_mun = agro[['PRODUTO', metric]].loc[agro['NOME']==mun_name]
         agro_mun = agro_mun.groupby('PRODUTO').sum().reset_index()
@@ -153,22 +157,16 @@ def agro_comp(agro, mun_name, metric, muns_prox_names):
         agro_prox[metric] = round(agro_prox[metric],2)
         agro_prox = agro_prox.sort_values(by=metric)
 
-    elif metric == 'REND_AREA':
-        agro['REND_AREA'] = agro['VALOR_PROD']/agro['AREA_PLANTADA']
-        agro_mun = agro[['PRODUTO', 'REND_AREA']].loc[agro['NOME']==mun_name]
+    elif metric in ['REND_AREA', 'REND_MEDIO']:
+        agro_mun = agro[agro['NOME']==mun_name]
         agro_mun = agro_mun.groupby('PRODUTO').mean().reset_index()
-        agro_mun['REND_AREA'] = round(agro_mun['REND_AREA'],2)
+        agro_mun[metric] = round(agro_mun[metric],2)
         agro_mun = agro_mun.sort_values(by=metric)
-        agro_prox = agro[['PRODUTO', 'REND_AREA']].loc[agro['NOME'].isin(muns_prox_names)]
+        agro_prox = agro[['PRODUTO', metric]].loc[agro['NOME'].isin(muns_prox_names)]
         agro_prox = agro_prox.groupby('PRODUTO').mean().reset_index()
-        agro_prox['REND_AREA'] = round(agro_prox['REND_AREA'],2)
+        agro_prox[metric] = round(agro_prox[metric],2)
         agro_prox = agro_prox.sort_values(by=metric)
     return agro_mun, agro_prox
-
-def tipos_de_solo(solos, nome_mun):
-    solos_prox = solos[solos['NOME']==mun_name].drop(columns=['NOME'])
-    solos_prox = solos_prox.groupby('SOLO').sum().reset_index().sort_values(by='AREA_TOTAL', ascending = False)
-    return solos_prox.reset_index().drop(columns='index')
 
 def generate_random_key(length=16):
     characters = string.ascii_letters + string.digits
@@ -345,8 +343,8 @@ with st.container():
         'Tipo de métrica', [
             'Dados Meteorológicos',
             'Recursos Hídricos',
-            'Produtos Agrícolas - Valor Comercializado', 
-            'Tipos de Solo - Área Total'
+            'Produtos Agrícolas - Valor Comercializado (milhares de reais)', 
+            'Tipos de Solo - Área Total (ha)'
             ], 
             on_change = mudar_tipo_de_metrica
             )
@@ -366,7 +364,7 @@ with st.container():
             )
         metrica =  aliases[metrica_alias]
 
-    elif tipo_metrica == 'Recursos hídricos':
+    elif tipo_metrica == 'Recursos Hídricos':
 
         aliases = {
             "Qualidade média da água":"QUAL_MED_AGUA",
@@ -381,7 +379,7 @@ with st.container():
             )
         metrica =  aliases[metrica_alias]
         
-    elif tipo_metrica == 'Produtos Agrícolas - Valor Comercializado':
+    elif tipo_metrica == 'Produtos Agrícolas - Valor Comercializado (milhares de reais)':
 
         produtos = [
             'ALGODAO HERBACEO (EM CAROCO)',
@@ -416,7 +414,7 @@ with st.container():
             produtos,
             on_change = mudar_metrica
             )
-        metrica_alias = f"{metrica} - Valor Comercializado (R$)"
+        metrica_alias = f"{metrica} - Valor Comercializado (milhares de reais)"
     else:
 
         tipos_solo = [
@@ -527,7 +525,8 @@ with col2:
         text = 'QUAL_MED_AGUA'
         )
 # Atividades agrícolas
-st.subheader("Atividades agrícolas")   
+st.subheader("Atividades agrícolas")
+
 agro_mun, agro_prox = agro_comp(agro, mun_name, 'VALOR_PROD', muns_prox_names)
 fig = make_subplots(rows=1, cols=2, subplot_titles=('Município Potencial', 'Total do(s) Vizinho(s)'))
 trace1 = px.bar(
@@ -549,10 +548,11 @@ fig.add_trace(trace2.data[0], row=1, col=2)
 fig.update_layout(
     title='Produtos agrícolas mais comercializados',
     yaxis=dict(title='Produtos'),
-    xaxis=dict(title='Valor comercializado (R$)')
+    xaxis=dict(title='Valor comercializado (milhares de reais)')
 )
 
 st.plotly_chart(fig, use_container_width=True)
+
 
 agro_mun, agro_prox = agro_comp(agro, mun_name, 'AREA_PLANTADA', muns_prox_names)
 fig = make_subplots(rows=1, cols=2, subplot_titles=('Município Potencial', 'Total do(s) vizinho(s)'))
@@ -580,6 +580,7 @@ fig.update_layout(
 
 st.plotly_chart(fig, use_container_width=True)
 
+
 agro_mun, agro_prox = agro_comp(agro, mun_name, 'REND_AREA', muns_prox_names)
 fig = make_subplots(rows=1, cols=2, subplot_titles=('Município Potencial', 'Média do(s) vizinho(s)'))
 trace1 = px.bar(
@@ -599,12 +600,39 @@ trace2 = px.bar(
 fig.add_trace(trace2.data[0], row=1, col=2)
 
 fig.update_layout(
-    title='Produtos agrícolas com maior rendimento por área plantada',
+    title='Produtos agrícolas com maior valor comercializado por área plantada',
     yaxis=dict(title='Produtos'),
-    xaxis=dict(title='Valor comercializado (R$) / Área plantada (ha)')
+    xaxis=dict(title='Valor comercializado (milhares de reais) / Área plantada (ha)')
 )
 
 st.plotly_chart(fig, use_container_width=True)
+
+agro_mun, agro_prox = agro_comp(agro, mun_name, 'REND_MEDIO', muns_prox_names)
+fig = make_subplots(rows=1, cols=2, subplot_titles=('Município Potencial', 'Média do(s) vizinho(s)'))
+trace1 = px.bar(
+    agro_mun,
+    x='REND_MEDIO',
+    y='PRODUTO',
+    orientation='h'
+)
+fig.add_trace(trace1.data[0], row=1, col=1)
+
+trace2 = px.bar(
+    agro_prox,
+    x='REND_MEDIO',
+    y='PRODUTO',
+    orientation='h'
+)
+fig.add_trace(trace2.data[0], row=1, col=2)
+
+fig.update_layout(
+    title='Produtos agrícolas com maior rendimento médio por área plantada',
+    yaxis=dict(title='Produtos'),
+    xaxis=dict(title='Kg / Área plantada (ha)')
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
 
 # Tipos de solos
 st.subheader("Solos")
